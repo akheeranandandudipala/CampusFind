@@ -1,5 +1,7 @@
 package com.campusfind.app.utils;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.util.Log;
 
 import java.util.Properties;
@@ -13,21 +15,25 @@ import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
 
 /**
- * Sends emails automatically via Gmail SMTP in a background thread.
- * No user interaction, no dialog, no intent required.
- *
- * ── SETUP (one-time) ──────────────────────────────────────────────────────
- *  1. Create a dedicated Gmail account for the app
- *     (e.g.  campusfind.noreply@gmail.com)
- *  2. Enable 2-Factor Authentication on that account.
- *  3. Go to: Google Account → Security → App Passwords
- *     → Select "Mail" + "Other (Custom name)" → Generate
- *  4. Copy the 16-character App Password (no spaces) and paste below.
- * ──────────────────────────────────────────────────────────────────────────
+ * Handles email notifications for CampusFind.
+ * Supports manual sending via Android Email Intent (recommended & secure)
+ * as well as background SMTP.
  */
 public class EmailSender {
 
     private static final String TAG = "EmailSender";
+
+    /**
+     * Creates an Android ACTION_SENDTO intent pre-populated with recipient, subject, and body.
+     * This allows the user to review the details and press Send manually from their preferred email app.
+     */
+    public static Intent createEmailIntent(String toEmail, String subject, String body) {
+        Intent intent = new Intent(Intent.ACTION_SENDTO);
+        intent.setData(Uri.parse("mailto:" + Uri.encode(toEmail != null ? toEmail.trim() : "")));
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject != null ? subject : "");
+        intent.putExtra(Intent.EXTRA_TEXT, body != null ? body : "");
+        return intent;
+    }
 
     // ── Fill in your dedicated app Gmail address and App Password ─────────
     private static final String SENDER_EMAIL    = "campusfind.noreply@gmail.com";

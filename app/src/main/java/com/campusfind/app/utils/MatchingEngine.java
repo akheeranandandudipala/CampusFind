@@ -71,6 +71,25 @@ public class MatchingEngine {
         return score;
     }
 
+    /**
+     * Extracts overlapping keywords between two item names (ignoring short stopwords < 3 chars).
+     */
+    public static List<String> getMatchingKeywords(String name1, String name2) {
+        List<String> matches = new ArrayList<>();
+        if (name1 == null || name2 == null) return matches;
+        String[] words1 = name1.trim().toLowerCase().split("\\s+");
+        String[] words2 = name2.trim().toLowerCase().split("\\s+");
+        for (String w1 : words1) {
+            if (w1.length() < 3) continue;
+            for (String w2 : words2) {
+                if (w1.equals(w2) && !matches.contains(w1)) {
+                    matches.add(w1);
+                }
+            }
+        }
+        return matches;
+    }
+
     // -----------------------------------------------------------------------
     // Private helpers
     // -----------------------------------------------------------------------

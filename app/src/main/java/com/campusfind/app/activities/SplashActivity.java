@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.view.View;
 import android.view.animation.AlphaAnimation;
 import android.view.animation.Animation;
 import android.view.animation.ScaleAnimation;
@@ -28,7 +29,7 @@ public class SplashActivity extends AppCompatActivity {
         // Animate logo: scale + fade in
         ImageView logo = findViewById(R.id.ivSplashLogo);
         TextView tagline = findViewById(R.id.tvSplashTagline);
-        TextView appName = findViewById(R.id.tvSplashAppName);
+        View appName = findViewById(R.id.ivSplashAppName);
 
         // Scale + fade for logo
         ScaleAnimation scale = new ScaleAnimation(0.7f, 1f, 0.7f, 1f,

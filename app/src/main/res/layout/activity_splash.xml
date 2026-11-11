@@ -7,27 +7,25 @@
     android:background="@drawable/bg_splash"
     android:padding="32dp">
 
-    <!-- Logo -->
+    <!-- Logo (Bag & Magnifier Squircle) -->
     <ImageView
         android:id="@+id/ivSplashLogo"
-        android:layout_width="130dp"
-        android:layout_height="130dp"
+        android:layout_width="120dp"
+        android:layout_height="120dp"
         android:src="@drawable/ic_campusfind_logo"
         android:scaleType="fitCenter"
         android:contentDescription="CampusFind Logo" />
 
-    <!-- App Name -->
-    <TextView
-        android:id="@+id/tvSplashAppName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+    <!-- Stylized App Name Wordmark -->
+    <ImageView
+        android:id="@+id/ivSplashAppName"
+        android:layout_width="220dp"
+        android:layout_height="50dp"
         android:layout_marginTop="20dp"
-        android:text="CampusFind"
-        android:textColor="#FFFFFF"
-        android:textSize="34sp"
-        android:textStyle="bold"
-        android:fontFamily="sans-serif-medium"
-        android:alpha="0" />
+        android:src="@drawable/ic_campusfind_wordmark_white"
+        android:scaleType="fitCenter"
+        android:alpha="0"
+        android:contentDescription="CampusFind" />
 
     <!-- Tagline -->
     <TextView

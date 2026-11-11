@@ -1,6 +1,7 @@
 package com.campusfind.app.activities;
 
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -182,32 +183,50 @@ public class ReportLostActivity extends AppCompatActivity {
     }
 
     /**
-     * Notifies the finder (who reported a Found item) that the owner just submitted a Lost report.
-     * Sends automatically via SMTP in a background thread — no dialog, no user tap.
+     * Shows a match dialog to the owner with the finder's email and matching keywords,
+     * allowing them to review and manually send an email.
      */
     private void notifyFinder(Item lostItem, Item foundItem) {
         String finderEmail = foundItem.getReporterEmail();
         if (finderEmail == null || finderEmail.isEmpty()) return;
 
-        String subject = "CampusFind: The owner of \"" + foundItem.getItemName() + "\" just reported it lost!";
-        String body    = "Hi " + (foundItem.getReporterName() != null ? foundItem.getReporterName() : "there") + ",\n\n"
+        List<String> keywords = MatchingEngine.getMatchingKeywords(lostItem.getItemName(), foundItem.getItemName());
+        String keywordsSummary = keywords.isEmpty() ? "Category / Location Match" : TextUtils.join(", ", keywords);
+
+        String subject = "CampusFind: Possible Match for Your Found " + foundItem.getItemName();
+        String body = "Hi " + (foundItem.getReporterName() != null ? foundItem.getReporterName() : "there") + ",\n\n"
                 + "The owner of the item you found has just submitted a lost report that matches yours!\n\n"
-                + "🔍 Their Lost Report:\n"
-                + "  Item: " + lostItem.getItemName() + "\n"
+                + "🔍 Matched Lost Report Details:\n"
+                + "  Lost Item: " + lostItem.getItemName() + "\n"
                 + "  Category: " + lostItem.getCategory() + "\n"
+                + "  Matched Keywords: " + keywordsSummary + "\n"
                 + "  Location Lost: " + lostItem.getLocation() + "\n"
-                + "  Date: " + lostItem.getDate() + "\n"
+                + "  Date Lost: " + lostItem.getDate() + "\n"
                 + "  Reported by: " + lostItem.getReporterName()
                 + " (" + lostItem.getReporterRollNo() + ")\n\n"
-                + "📦 Your Found Report:\n"
-                + "  Item Found: " + foundItem.getItemName() + "\n"
-                + "  Location Found: " + foundItem.getLocation() + "\n\n"
                 + "Please arrange to return the item.\n"
                 + "The owner will show you their OWNER QR CODE for safe handover verification.\n\n"
-                + "— CampusFind App\nFind Lost. Return Found.";
+                + "— " + lostItem.getReporterName();
 
-        // Sends silently in background — no Gmail chooser, no user interaction
-        EmailSender.sendAsync(finderEmail, subject, body);
+        new AlertDialog.Builder(this)
+                .setTitle("🎯 Potential Match Found!")
+                .setMessage("Someone reported finding an item matching your lost report!\n\n"
+                        + "📦 Found Item: " + foundItem.getItemName() + "\n"
+                        + "🔑 Matched Keywords: " + keywordsSummary + "\n"
+                        + "👤 Found By: " + (foundItem.getReporterName() != null ? foundItem.getReporterName() : "Campus Student") + "\n"
+                        + "📧 Finder Email: " + finderEmail + "\n\n"
+                        + "Would you like to send an email to the finder?")
+                .setPositiveButton("✉️ Send Email", (dialog, which) -> {
+                    Intent emailIntent = EmailSender.createEmailIntent(finderEmail, subject, body);
+                    try {
+                        startActivity(Intent.createChooser(emailIntent, "Send Email via..."));
+                    } catch (Exception e) {
+                        Toast.makeText(ReportLostActivity.this,
+                                "No email app found. Finder email: " + finderEmail, Toast.LENGTH_LONG).show();
+                    }
+                })
+                .setNegativeButton("Done", null)
+                .show();
     }
 
     /**

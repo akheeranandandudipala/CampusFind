@@ -13,11 +13,4 @@
         </shape>
     </item>
 
-    <!-- Centered logo -->
-    <item
-        android:width="140dp"
-        android:height="140dp"
-        android:gravity="center"
-        android:drawable="@drawable/ic_campusfind_logo" />
-
 </layer-list>

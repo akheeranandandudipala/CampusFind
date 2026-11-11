@@ -18,6 +18,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.core.content.FileProvider;
@@ -379,13 +380,13 @@ public class ReportFoundActivity extends AppCompatActivity {
             public void onSuccess(List<Item> allLostItems) {
                 List<Item> matches = MatchingEngine.findMatches(savedFoundItem, allLostItems);
                 if (!matches.isEmpty()) {
-                    sendMatchEmailAuto(savedFoundItem, matches);
+                    showMatchFoundDialog(savedFoundItem, matches);
                 } else {
                     // Also check local SQLite in case Firestore lost items were submitted offline
                     List<Item> localLost  = dbHelper.getLostItems(null, null);
                     List<Item> localMatch = MatchingEngine.findMatches(savedFoundItem, localLost);
                     if (!localMatch.isEmpty()) {
-                        sendMatchEmailAuto(savedFoundItem, localMatch);
+                        showMatchFoundDialog(savedFoundItem, localMatch);
                     } else {
                         Toast.makeText(ReportFoundActivity.this,
                                 "✅ Found item reported! No matches yet.", Toast.LENGTH_LONG).show();
@@ -400,7 +401,7 @@ public class ReportFoundActivity extends AppCompatActivity {
                 List<Item> localLost  = dbHelper.getLostItems(null, null);
                 List<Item> localMatch = MatchingEngine.findMatches(savedFoundItem, localLost);
                 if (!localMatch.isEmpty()) {
-                    sendMatchEmailAuto(savedFoundItem, localMatch);
+                    showMatchFoundDialog(savedFoundItem, localMatch);
                 } else {
                     Toast.makeText(ReportFoundActivity.this,
                             "✅ Found item reported successfully!", Toast.LENGTH_LONG).show();
@@ -411,43 +412,60 @@ public class ReportFoundActivity extends AppCompatActivity {
     }
 
     // -----------------------------------------------------------------------
-    // Automatic match email — no dialog, no user tap required
+    // Manual match email prompt — shows keywords and owner email for user to send
     // -----------------------------------------------------------------------
 
     /**
-     * Called when a match is found. Sends an email to the lost item owner
-     * automatically in the background — no dialog, no user action needed.
+     * Called when a match is found based on keywords, category, or location.
+     * Shows a dialog displaying the lost owner's email, matched keywords,
+     * and a button to manually send the notification email.
      */
-    private void sendMatchEmailAuto(Item foundItem, List<Item> matches) {
+    private void showMatchFoundDialog(Item foundItem, List<Item> matches) {
         Item bestMatch = matches.get(0);
         String ownerEmail = bestMatch.getReporterEmail() != null ? bestMatch.getReporterEmail() : "";
-        String ownerName  = bestMatch.getReporterName()  != null ? bestMatch.getReporterName()  : "the owner";
+        String ownerName  = bestMatch.getReporterName()  != null ? bestMatch.getReporterName()  : "Lost Item Owner";
+        String ownerRoll  = bestMatch.getReporterRollNo() != null ? bestMatch.getReporterRollNo() : "";
 
-        String subject = "CampusFind: Someone Found Your Lost " + bestMatch.getItemName() + "!";
+        // Extract overlapping keywords between item names
+        List<String> keywords = MatchingEngine.getMatchingKeywords(foundItem.getItemName(), bestMatch.getItemName());
+        String keywordsSummary = keywords.isEmpty() ? "Category / Location Match" : TextUtils.join(", ", keywords);
+
+        String subject = "CampusFind: Possible Match for Your Lost " + bestMatch.getItemName();
         String body = "Hi " + ownerName + ",\n\n"
-                + "Great news! Someone on campus has reported finding an item that may be yours.\n\n"
-                + "🔍 Your Lost Item:\n"
-                + "  Item: "          + bestMatch.getItemName()  + "\n"
-                + "  Category: "      + bestMatch.getCategory()  + "\n"
-                + "  Location Lost: " + bestMatch.getLocation()  + "\n"
-                + "  Date: "          + bestMatch.getDate()      + "\n\n"
-                + "📦 Found Item Report:\n"
-                + "  Item Found: "      + foundItem.getItemName() + "\n"
-                + "  Category: "        + foundItem.getCategory() + "\n"
-                + "  Location Found: "  + foundItem.getLocation() + "\n"
-                + "  Date Found: "      + foundItem.getDate()     + "\n"
-                + "  Reported by: "     + foundItem.getReporterName()
-                + " (" + foundItem.getReporterRollNo() + ")\n\n"
-                + "👉 Open CampusFind → Search Items → Found tab to see the photo.\n\n"
-                + "To collect your item safely, show your OWNER QR CODE to the finder.\n\n"
-                + "— CampusFind App\nFind Lost. Return Found.";
+                + "Great news! I found an item on campus that matches your lost report.\n\n"
+                + "🔍 Matched Report Details:\n"
+                + "  Your Lost Item: " + bestMatch.getItemName() + " (Category: " + bestMatch.getCategory() + ")\n"
+                + "  Matched Keywords: " + keywordsSummary + "\n"
+                + "  Location Found: " + foundItem.getLocation() + "\n"
+                + "  Date Found: " + foundItem.getDate() + "\n"
+                + "  Reported by: " + foundItem.getReporterName() + " (" + foundItem.getReporterRollNo() + ")\n\n"
+                + "Please check the CampusFind app to verify and arrange collection.\n\n"
+                + "— " + foundItem.getReporterName();
 
-        // Sends silently in background — no Gmail chooser, no user interaction
-        EmailSender.sendAsync(ownerEmail, subject, body);
-
-        Toast.makeText(this,
-                "🎯 Match found! Owner notified automatically via email.",
-                Toast.LENGTH_LONG).show();
-        finish();
+        new AlertDialog.Builder(this)
+                .setTitle("🎯 Potential Match Found!")
+                .setMessage("We found a matching lost item report on campus!\n\n"
+                        + "📦 Matched Item: " + bestMatch.getItemName() + "\n"
+                        + "🔑 Matched Keywords: " + keywordsSummary + "\n"
+                        + "👤 Owner: " + ownerName + (ownerRoll.isEmpty() ? "" : " (" + ownerRoll + ")") + "\n"
+                        + "📧 Owner Email: " + ownerEmail + "\n\n"
+                        + "Would you like to send an email to notify the owner?")
+                .setPositiveButton("✉️ Send Email", (dialog, which) -> {
+                    Intent emailIntent = EmailSender.createEmailIntent(ownerEmail, subject, body);
+                    try {
+                        startActivity(Intent.createChooser(emailIntent, "Send Email via..."));
+                    } catch (Exception e) {
+                        Toast.makeText(ReportFoundActivity.this,
+                                "No email app found. Owner email: " + ownerEmail, Toast.LENGTH_LONG).show();
+                    }
+                    finish();
+                })
+                .setNegativeButton("Done (Later)", (dialog, which) -> {
+                    Toast.makeText(ReportFoundActivity.this,
+                            "✅ Found item reported successfully!", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .setCancelable(false)
+                .show();
     }
 }

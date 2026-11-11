@@ -50,18 +50,15 @@
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginStart="12dp"
+                        android:gravity="center_vertical"
                         android:orientation="vertical">
 
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="campus"
-                            android:textColor="#FFFFFF"
-                            android:textSize="18sp"
-                            android:textStyle="bold"
-                            android:letterSpacing="0.02" />
-
-                        <!-- Orange "find" part inline below - simulated via subtitle -->
+                        <ImageView
+                            android:layout_width="120dp"
+                            android:layout_height="26dp"
+                            android:src="@drawable/ic_campusfind_wordmark_white"
+                            android:scaleType="fitStart"
+                            android:contentDescription="CampusFind" />
                     </LinearLayout>
 
                     <!-- Logout Icon -->
