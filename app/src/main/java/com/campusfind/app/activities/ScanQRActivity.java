@@ -53,6 +53,9 @@ public class ScanQRActivity extends AppCompatActivity {
         initViews();
         setupToolbar();
         setupManualInput();
+        if (barcodeScannerView != null) {
+            barcodeScannerView.initializeFromIntent(getIntent());
+        }
         checkCameraPermissionAndStart();
     }
 
@@ -128,17 +131,56 @@ public class ScanQRActivity extends AppCompatActivity {
             return;
         }
 
-        // ── Route 2: Claim QR (existing system) ───────────────────────────
-        Claim claim = dbHelper.getClaimByQrPayload(payload);
+        // ── Route 2: Claim QR (CampusFind Claim System) ───────────────────
+        processClaimPayload(payload.trim());
+    }
 
-        if (claim == null) {
-            showResultDialog("❌ Invalid QR Code",
-                    "No matching claim or owner code found for:\n\n" + payload
-                    + "\n\nMake sure the owner shows their Owner Verification QR from their Lost Report.",
-                    false);
+    /**
+     * Handle Claim QR payload (e.g. CAMPUSFIND_CLAIM_...).
+     * 1. Checks local SQLite first.
+     * 2. Falls back to Firestore if not found locally (cross-device scanning).
+     */
+    private void processClaimPayload(String payload) {
+        // 1. Try local SQLite (instant)
+        Claim localClaim = dbHelper.getClaimByQrPayload(payload);
+        if (localClaim != null) {
+            showClaimVerifiedDialog(localClaim, payload, false);
             return;
         }
 
+        // 2. Not in local SQLite — query Firestore (claim was created on another device)
+        FirestoreHelper.getInstance().getClaimByQrPayload(payload, new FirestoreHelper.ClaimCallback() {
+            @Override
+            public void onSuccess(Claim cloudClaim) {
+                runOnUiThread(() -> {
+                    if (cloudClaim == null) {
+                        isProcessing = false;
+                        showResultDialog("❌ Invalid QR Code",
+                                "No matching claim or owner code found for:\n\n" + payload
+                                + "\n\nMake sure the student presents either their Owner QR from My Reports or Claim QR from Item Detail.",
+                                false);
+                    } else {
+                        showClaimVerifiedDialog(cloudClaim, payload, true);
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String message) {
+                runOnUiThread(() -> {
+                    isProcessing = false;
+                    showResultDialog("❌ Verification Failed",
+                            "Could not verify claim with server:\n\n" + message,
+                            false);
+                });
+            }
+        });
+    }
+
+    /**
+     * Displays the "Claim Verified" confirmation dialog.
+     */
+    private void showClaimVerifiedDialog(Claim claim, String payload, boolean fromCloud) {
         if ("Returned".equalsIgnoreCase(claim.getClaimStatus())) {
             showResultDialog("✅ Already Returned",
                     "This item has already been verified and returned to "
@@ -148,26 +190,42 @@ public class ScanQRActivity extends AppCompatActivity {
             return;
         }
 
-        boolean success = dbHelper.verifyAndCompleteHandover(payload);
-        if (success) {
-            String itemName   = claim.getItemName()     != null ? claim.getItemName()     : "Campus Item";
-            String studentName = claim.getClaimerName() != null ? claim.getClaimerName()  : "Student";
-            String studentRoll = claim.getClaimerRollNo() != null ? claim.getClaimerRollNo() : "--";
-            String studentEmail = claim.getClaimerEmail() != null ? claim.getClaimerEmail() : "--";
+        String itemName    = claim.getItemName()     != null ? claim.getItemName()     : "Campus Item";
+        String studentName = claim.getClaimerName()  != null ? claim.getClaimerName()  : "Student";
+        String studentRoll = claim.getClaimerRollNo() != null ? claim.getClaimerRollNo() : "--";
+        String studentEmail = claim.getClaimerEmail() != null ? claim.getClaimerEmail() : "--";
+        String itemType    = claim.getItemType()     != null ? claim.getItemType()     : "Item";
 
-            String message = "Item Handover Completed!\n\n"
-                    + "• Item: " + itemName + " (" + claim.getItemType() + ")\n"
-                    + "• Claimed by: " + studentName + "\n"
-                    + "• Roll No: " + studentRoll + "\n"
-                    + "• Email: " + studentEmail + "\n\n"
-                    + "Both Claim and Item status updated to 'Returned'.";
+        String message = "📦 Student Claim Verified!\n\n"
+                + "A campus member is claiming this item:\n"
+                + "• Item: " + itemName + " (" + itemType + ")\n"
+                + "• Claimed by: " + studentName + "\n"
+                + "• Roll No: " + studentRoll + "\n"
+                + "• Email: " + studentEmail + "\n\n"
+                + "Confirm this matches the student standing in front of you, then tap 'Complete Handover'.";
 
-            showResultDialog("🎉 Handover Verified!", message, true);
-        } else {
-            showResultDialog("❌ Handover Failed",
-                    "Could not complete the handover. Please try again.",
-                    false);
-        }
+        new AlertDialog.Builder(this)
+                .setTitle("📦 Claim Verified!")
+                .setMessage(message)
+                .setCancelable(false)
+                .setPositiveButton("✅ Complete Handover", (dialog, which) -> {
+                    // Update local SQLite
+                    dbHelper.verifyAndCompleteHandover(payload);
+                    // Update cloud Firestore (both claim and item status)
+                    FirestoreHelper.getInstance().markClaimReturned(payload);
+
+                    showResultDialog("🎉 Handover Verified!",
+                            "Item handover completed!\n\n"
+                            + "• Item: " + itemName + " (" + itemType + ")\n"
+                            + "• Handed over to: " + studentName + " (" + studentRoll + ")\n\n"
+                            + "Status updated to 'Returned' across CampusFind.",
+                            true);
+                })
+                .setNegativeButton("⚠️ Cancel", (dialog, which) -> {
+                    isProcessing = false;
+                    Toast.makeText(this, "Handover cancelled.", Toast.LENGTH_SHORT).show();
+                })
+                .show();
     }
 
     /**
@@ -248,23 +306,15 @@ public class ScanQRActivity extends AppCompatActivity {
                 .setMessage(confirmMsg)
                 .setCancelable(false)
                 .setPositiveButton("✅ Complete Handover", (dialog, which) -> {
-                    // Try local SQLite update first
-                    boolean done = dbHelper.completeOwnerHandover(ownerCode);
-                    if (!done) {
-                        // Item is cloud-only (different device) — update Firestore directly
-                        FirestoreHelper.getInstance().markReturnedByOwnerCode(ownerCode);
-                        done = true;
-                    }
-                    if (done) {
-                        showResultDialog("🎉 Handover Complete!",
-                                "The item \"" + lostItem.getItemName() + "\" has been\n"
-                                + "successfully returned to " + ownerName + ".\n\n"
-                                + "Status updated to Returned. Thank you! 🙏",
-                                true);
-                    } else {
-                        showResultDialog("❌ Update Failed",
-                                "Could not update status. Please try again.", false);
-                    }
+                    // Update both local SQLite and Firestore cloud database
+                    dbHelper.completeOwnerHandover(ownerCode);
+                    FirestoreHelper.getInstance().markReturnedByOwnerCode(ownerCode);
+
+                    showResultDialog("🎉 Handover Complete!",
+                            "The item \"" + lostItem.getItemName() + "\" has been\n"
+                            + "successfully returned to " + ownerName + ".\n\n"
+                            + "Status updated to Returned across CampusFind. Thank you! 🙏",
+                            true);
                 })
                 .setNegativeButton("⚠️ Cancel — Wrong Person", (dialog, which) -> {
                     isProcessing = false;

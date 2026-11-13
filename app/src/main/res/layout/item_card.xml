@@ -66,28 +66,64 @@
                 android:background="@drawable/badge_active" />
         </LinearLayout>
 
-        <!-- Item Name -->
-        <TextView
-            android:id="@+id/tvItemName"
+        <!-- Main Content Row: Details on Left + Optional Photo on Right -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:text="Blue Leather Wallet"
-            android:textColor="@color/text_primary"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            android:maxLines="2"
-            android:ellipsize="end" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginTop="10dp">
 
-        <!-- Category -->
-        <TextView
-            android:id="@+id/tvCategory"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="Category: Wallet"
-            android:textColor="@color/text_secondary"
-            android:textSize="13sp" />
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <!-- Item Name -->
+                <TextView
+                    android:id="@+id/tvItemName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Blue Leather Wallet"
+                    android:textColor="@color/text_primary"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
+
+                <!-- Category -->
+                <TextView
+                    android:id="@+id/tvCategory"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:text="Category: Wallet"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+
+            <!-- Thumbnail photo for Found items -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardItemThumbnail"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:layout_marginStart="12dp"
+                android:visibility="gone"
+                app:cardCornerRadius="10dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="1dp"
+                app:strokeColor="@color/card_stroke"
+                app:cardBackgroundColor="@color/surface_variant">
+
+                <ImageView
+                    android:id="@+id/ivItemThumbnail"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="centerCrop"
+                    android:contentDescription="Item Photo" />
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
 
         <View
             android:layout_width="match_parent"

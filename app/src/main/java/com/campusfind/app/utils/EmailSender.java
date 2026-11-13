@@ -25,13 +25,25 @@ public class EmailSender {
 
     /**
      * Creates an Android ACTION_SENDTO intent pre-populated with recipient, subject, and body.
-     * This allows the user to review the details and press Send manually from their preferred email app.
+     * Encodes subject and body into the mailto: query string AND sets Intent extras to ensure
+     * full compatibility with all email clients (Gmail, Outlook, Yahoo, Samsung Mail).
      */
     public static Intent createEmailIntent(String toEmail, String subject, String body) {
+        String cleanEmail = toEmail != null ? toEmail.trim() : "";
+        String cleanSubject = subject != null ? subject : "";
+        String cleanBody = body != null ? body : "";
+
+        // Standard mailto URI with query params
+        String mailtoUri = "mailto:" + Uri.encode(cleanEmail)
+                + "?subject=" + Uri.encode(cleanSubject)
+                + "&body=" + Uri.encode(cleanBody);
+
         Intent intent = new Intent(Intent.ACTION_SENDTO);
-        intent.setData(Uri.parse("mailto:" + Uri.encode(toEmail != null ? toEmail.trim() : "")));
-        intent.putExtra(Intent.EXTRA_SUBJECT, subject != null ? subject : "");
-        intent.putExtra(Intent.EXTRA_TEXT, body != null ? body : "");
+        intent.setData(Uri.parse(mailtoUri));
+        intent.putExtra(Intent.EXTRA_EMAIL, new String[]{cleanEmail});
+        intent.putExtra(Intent.EXTRA_SUBJECT, cleanSubject);
+        intent.putExtra(Intent.EXTRA_TEXT, cleanBody);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         return intent;
     }
 

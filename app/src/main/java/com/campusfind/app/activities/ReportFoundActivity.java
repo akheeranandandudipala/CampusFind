@@ -28,6 +28,7 @@ import com.campusfind.app.database.DatabaseHelper;
 import com.campusfind.app.models.Item;
 import com.campusfind.app.utils.EmailSender;
 import com.campusfind.app.utils.FirestoreHelper;
+import com.campusfind.app.utils.ImageHelper;
 import com.campusfind.app.utils.MatchingEngine;
 import com.campusfind.app.utils.SessionManager;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -80,6 +81,11 @@ public class ReportFoundActivity extends AppCompatActivity {
             registerForActivityResult(new ActivityResultContracts.TakePicture(), success -> {
                 if (success && photoUris[currentPhotoSlot] != null) {
                     showPhotoInSlot(currentPhotoSlot, photoUris[currentPhotoSlot]);
+                    // Convert to compressed, persistent Base64 so it works offline and across all devices
+                    String b64 = ImageHelper.uriToBase64(this, photoUris[currentPhotoSlot]);
+                    if (b64 != null) {
+                        photoPaths[currentPhotoSlot] = b64;
+                    }
                 }
             });
 
@@ -88,8 +94,14 @@ public class ReportFoundActivity extends AppCompatActivity {
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
                 if (uri != null) {
                     photoUris[currentPhotoSlot]  = uri;
-                    photoPaths[currentPhotoSlot] = uri.toString();
                     showPhotoInSlot(currentPhotoSlot, uri);
+                    // Convert to compressed, persistent Base64
+                    String b64 = ImageHelper.uriToBase64(this, uri);
+                    if (b64 != null) {
+                        photoPaths[currentPhotoSlot] = b64;
+                    } else {
+                        photoPaths[currentPhotoSlot] = uri.toString();
+                    }
                 }
             });
 
@@ -426,8 +438,8 @@ public class ReportFoundActivity extends AppCompatActivity {
         String ownerName  = bestMatch.getReporterName()  != null ? bestMatch.getReporterName()  : "Lost Item Owner";
         String ownerRoll  = bestMatch.getReporterRollNo() != null ? bestMatch.getReporterRollNo() : "";
 
-        // Extract overlapping keywords between item names
-        List<String> keywords = MatchingEngine.getMatchingKeywords(foundItem.getItemName(), bestMatch.getItemName());
+        // Extract overlapping keywords between item reports (names + descriptions)
+        List<String> keywords = MatchingEngine.getMatchingKeywords(foundItem, bestMatch);
         String keywordsSummary = keywords.isEmpty() ? "Category / Location Match" : TextUtils.join(", ", keywords);
 
         String subject = "CampusFind: Possible Match for Your Lost " + bestMatch.getItemName();

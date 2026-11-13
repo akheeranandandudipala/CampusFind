@@ -190,7 +190,7 @@ public class ReportLostActivity extends AppCompatActivity {
         String finderEmail = foundItem.getReporterEmail();
         if (finderEmail == null || finderEmail.isEmpty()) return;
 
-        List<String> keywords = MatchingEngine.getMatchingKeywords(lostItem.getItemName(), foundItem.getItemName());
+        List<String> keywords = MatchingEngine.getMatchingKeywords(lostItem, foundItem);
         String keywordsSummary = keywords.isEmpty() ? "Category / Location Match" : TextUtils.join(", ", keywords);
 
         String subject = "CampusFind: Possible Match for Your Found " + foundItem.getItemName();

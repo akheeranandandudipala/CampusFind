@@ -1,5 +1,6 @@
 package com.campusfind.app.activities;
 
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -16,6 +17,9 @@ import com.campusfind.app.R;
 import com.campusfind.app.database.DatabaseHelper;
 import com.campusfind.app.models.Claim;
 import com.campusfind.app.models.Item;
+import com.campusfind.app.utils.EmailSender;
+import com.campusfind.app.utils.FirestoreHelper;
+import com.campusfind.app.utils.ImageHelper;
 import com.campusfind.app.utils.QRCodeHelper;
 import com.campusfind.app.utils.SessionManager;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -27,7 +31,7 @@ public class ItemDetailActivity extends AppCompatActivity {
     private TextView tvDetailTypeBadge, tvDetailStatusBadge, tvDetailItemName, tvDetailCategory;
     private TextView tvDetailLocationLabel, tvDetailLocation, tvDetailDateLabel, tvDetailDate, tvDetailDescription;
     private TextView tvReporterName, tvReporterDetails, tvOwnershipNotice;
-    private MaterialButton btnClaimItem, btnViewClaimQR;
+    private MaterialButton btnClaimItem, btnViewClaimQR, btnContactEmail;
     private com.google.android.material.card.MaterialCardView cardItemPhoto;
     private ImageView ivItemPhoto;
 
@@ -49,6 +53,13 @@ public class ItemDetailActivity extends AppCompatActivity {
             Toast.makeText(this, "Item details not found.", Toast.LENGTH_SHORT).show();
             finish();
             return;
+        }
+
+        if (currentItem.getItemId() <= 0) {
+            int fallbackId = currentItem.getFirestoreId() != null && !currentItem.getFirestoreId().isEmpty()
+                    ? Math.abs(currentItem.getFirestoreId().hashCode() % 100000) + 1
+                    : Math.abs(((currentItem.getItemName() != null ? currentItem.getItemName() : "item") + currentItem.getDate()).hashCode() % 100000) + 1;
+            currentItem.setItemId(fallbackId);
         }
 
         initViews();
@@ -76,6 +87,7 @@ public class ItemDetailActivity extends AppCompatActivity {
 
         btnClaimItem = findViewById(R.id.btnClaimItem);
         btnViewClaimQR = findViewById(R.id.btnViewClaimQR);
+        btnContactEmail = findViewById(R.id.btnContactEmail);
         cardItemPhoto = findViewById(R.id.cardItemPhoto);
         ivItemPhoto = findViewById(R.id.ivItemPhoto);
     }
@@ -106,22 +118,25 @@ public class ItemDetailActivity extends AppCompatActivity {
             tvDetailTypeBadge.setTextColor(ContextCompat.getColor(this, R.color.primary));
             tvDetailTypeBadge.setBackgroundResource(R.drawable.badge_matched);
 
-            // Show photo if available
+            // Show photo using robust ImageHelper (Base64 / Local / Cloud)
             String photoPath = currentItem.getPhotoPath();
-            if (photoPath != null && !photoPath.isEmpty()) {
-                cardItemPhoto.setVisibility(View.VISIBLE);
-                try {
-                    android.net.Uri photoUri = android.net.Uri.parse(photoPath);
-                    ivItemPhoto.setImageURI(photoUri);
-                } catch (Exception e) {
+            if (photoPath != null && !photoPath.trim().isEmpty()) {
+                Bitmap bmp = ImageHelper.loadPhotoBitmap(this, photoPath);
+                if (bmp != null) {
+                    cardItemPhoto.setVisibility(View.VISIBLE);
+                    ivItemPhoto.setImageBitmap(bmp);
+                } else {
                     cardItemPhoto.setVisibility(View.GONE);
                 }
+            } else {
+                cardItemPhoto.setVisibility(View.GONE);
             }
         } else {
             tvDetailLocationLabel.setText("Location Lost");
             tvDetailDateLabel.setText("Date Lost");
             tvDetailTypeBadge.setTextColor(ContextCompat.getColor(this, R.color.accent));
             tvDetailTypeBadge.setBackgroundResource(R.drawable.badge_active);
+            cardItemPhoto.setVisibility(View.GONE);
         }
 
         // Status Badge
@@ -153,20 +168,38 @@ public class ItemDetailActivity extends AppCompatActivity {
             tvReporterName.setText("Campus Member (ID #" + currentItem.getUserId() + ")");
             tvReporterDetails.setText("Verified Campus Student/Staff");
         }
+
+        // Contact via Email Button setup
+        if (btnContactEmail != null) {
+            if (repEmail != null && !repEmail.trim().isEmpty()) {
+                btnContactEmail.setVisibility(View.VISIBLE);
+                btnContactEmail.setOnClickListener(v -> {
+                    String subject = "CampusFind: Regarding your " + currentItem.getItemType() + " report for " + currentItem.getItemName();
+                    String body = "Hi " + (repName != null ? repName : "there") + ",\n\n"
+                            + "I am reaching out regarding the " + currentItem.getItemType() + " item on CampusFind:\n\n"
+                            + "📦 Item: " + currentItem.getItemName() + "\n"
+                            + "📂 Category: " + currentItem.getCategory() + "\n"
+                            + "📍 Location: " + currentItem.getLocation() + "\n"
+                            + "📅 Date: " + currentItem.getDate() + "\n\n"
+                            + "[Please write your message here]\n\n"
+                            + "— Sent via CampusFind";
+                    Intent emailIntent = EmailSender.createEmailIntent(repEmail, subject, body);
+                    try {
+                        startActivity(Intent.createChooser(emailIntent, "Send Email via..."));
+                    } catch (Exception e) {
+                        Toast.makeText(this, "No email client found. Email: " + repEmail, Toast.LENGTH_LONG).show();
+                    }
+                });
+            } else {
+                btnContactEmail.setVisibility(View.GONE);
+            }
+        }
     }
 
     private void checkClaimStatusAndPermissions() {
         int currentUserId = sessionManager.getUserId();
-        boolean isOwner = (currentUserId == currentItem.getUserId());
+        boolean isOwner = (currentUserId > 0 && currentUserId == currentItem.getUserId());
         String status = currentItem.getStatus() != null ? currentItem.getStatus() : "Active";
-
-        if (isOwner) {
-            btnClaimItem.setVisibility(View.GONE);
-            btnViewClaimQR.setVisibility(View.GONE);
-            tvOwnershipNotice.setVisibility(View.VISIBLE);
-            tvOwnershipNotice.setText("You reported this item.");
-            return;
-        }
 
         if ("returned".equalsIgnoreCase(status)) {
             btnClaimItem.setVisibility(View.GONE);
@@ -185,11 +218,21 @@ public class ItemDetailActivity extends AppCompatActivity {
             tvOwnershipNotice.setText("You have an active claim for this item.");
 
             btnViewClaimQR.setOnClickListener(v -> showQRCodeDialog(userExistingClaim.getQrPayload()));
+            return;
+        }
+
+        if (isOwner) {
+            btnClaimItem.setVisibility(View.VISIBLE);
+            btnClaimItem.setText("Claim Item (Self/Test)");
+            btnViewClaimQR.setVisibility(View.GONE);
+            tvOwnershipNotice.setVisibility(View.VISIBLE);
+            tvOwnershipNotice.setText("You reported this item.");
+            btnClaimItem.setOnClickListener(v -> confirmAndCreateClaim());
         } else {
             btnClaimItem.setVisibility(View.VISIBLE);
+            btnClaimItem.setText("Claim This Item");
             btnViewClaimQR.setVisibility(View.GONE);
             tvOwnershipNotice.setVisibility(View.GONE);
-
             btnClaimItem.setOnClickListener(v -> confirmAndCreateClaim());
         }
     }
@@ -205,30 +248,44 @@ public class ItemDetailActivity extends AppCompatActivity {
 
     private void generateAndSaveClaim() {
         int currentUserId = sessionManager.getUserId();
+        if (currentUserId <= 0) currentUserId = 1;
+
+        int itemId = currentItem.getItemId();
+        if (itemId <= 0) {
+            itemId = Math.abs(currentItem.getItemName().hashCode() % 100000) + 1;
+            currentItem.setItemId(itemId);
+        }
+
         long timestamp = System.currentTimeMillis();
-        String qrPayload = "CAMPUSFIND_CLAIM_" + currentItem.getItemId() + "_" + timestamp;
+        String qrPayload = "CAMPUSFIND_CLAIM_" + itemId + "_" + timestamp;
 
         Claim claim = new Claim();
         claim.setUserId(currentUserId);
-        claim.setItemId(currentItem.getItemId());
+        claim.setItemId(itemId);
         claim.setItemType(currentItem.getItemType());
         claim.setQrPayload(qrPayload);
         claim.setClaimStatus("Pending");
+        claim.setClaimerName(sessionManager.getUserName());
+        claim.setClaimerRollNo(sessionManager.getUserRollNo());
+        claim.setClaimerEmail(sessionManager.getUserEmail());
+        claim.setItemName(currentItem.getItemName());
 
         long claimId = dbHelper.addClaim(claim);
-        if (claimId > 0) {
-            // Update status to Matched if it was Active
-            dbHelper.updateItemStatus(currentItem.getItemId(), currentItem.getItemType(), "Matched");
-            currentItem.setStatus("Matched");
-            populateItemData();
 
-            Toast.makeText(this, "Claim submitted successfully!", Toast.LENGTH_SHORT).show();
-            userExistingClaim = claim;
-            checkClaimStatusAndPermissions();
-            showQRCodeDialog(qrPayload);
-        } else {
-            Toast.makeText(this, "Failed to submit claim. Please try again.", Toast.LENGTH_SHORT).show();
-        }
+        // Also save claim to Firestore for cross-device verification
+        FirestoreHelper.getInstance().saveClaim(claim, null);
+
+        // Update item status to Matched in both SQLite and Firestore
+        dbHelper.updateItemStatus(itemId, currentItem.getItemType(), "Matched");
+        FirestoreHelper.getInstance().updateItemStatus(currentItem.getItemType(), currentItem.getFirestoreId(), "Matched");
+
+        currentItem.setStatus("Matched");
+        populateItemData();
+
+        Toast.makeText(this, "Claim submitted successfully!", Toast.LENGTH_SHORT).show();
+        userExistingClaim = claim;
+        checkClaimStatusAndPermissions();
+        showQRCodeDialog(qrPayload);
     }
 
     private void showQRCodeDialog(String qrPayload) {

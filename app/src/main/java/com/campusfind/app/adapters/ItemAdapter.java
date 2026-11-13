@@ -1,9 +1,11 @@
 package com.campusfind.app.adapters;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -12,6 +14,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.campusfind.app.R;
 import com.campusfind.app.models.Item;
+import com.campusfind.app.utils.ImageHelper;
+import com.google.android.material.card.MaterialCardView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,6 +87,20 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
                 break;
         }
 
+        // Photo Thumbnail
+        String photoPath = item.getPhotoPath();
+        if (photoPath != null && !photoPath.trim().isEmpty()) {
+            Bitmap thumb = ImageHelper.loadPhotoBitmap(context, photoPath);
+            if (thumb != null) {
+                holder.cardItemThumbnail.setVisibility(View.VISIBLE);
+                holder.ivItemThumbnail.setImageBitmap(thumb);
+            } else {
+                holder.cardItemThumbnail.setVisibility(View.GONE);
+            }
+        } else {
+            holder.cardItemThumbnail.setVisibility(View.GONE);
+        }
+
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onItemClick(item);
@@ -102,6 +120,8 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
         final TextView tvCategory;
         final TextView tvLocation;
         final TextView tvDate;
+        final MaterialCardView cardItemThumbnail;
+        final ImageView ivItemThumbnail;
 
         public ItemViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -111,6 +131,8 @@ public class ItemAdapter extends RecyclerView.Adapter<ItemAdapter.ItemViewHolder
             tvCategory = itemView.findViewById(R.id.tvCategory);
             tvLocation = itemView.findViewById(R.id.tvLocation);
             tvDate = itemView.findViewById(R.id.tvDate);
+            cardItemThumbnail = itemView.findViewById(R.id.cardItemThumbnail);
+            ivItemThumbnail = itemView.findViewById(R.id.ivItemThumbnail);
         }
     }
 }

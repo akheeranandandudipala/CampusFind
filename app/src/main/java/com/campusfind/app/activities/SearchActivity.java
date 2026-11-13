@@ -17,6 +17,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import com.campusfind.app.R;
 import com.campusfind.app.adapters.ItemAdapter;
+import com.campusfind.app.database.DatabaseHelper;
 import com.campusfind.app.models.Item;
 import com.campusfind.app.utils.FirestoreHelper;
 import com.google.android.material.appbar.MaterialToolbar;
@@ -240,6 +241,42 @@ public class SearchActivity extends AppCompatActivity {
         if (isFetchingLost || isFetchingFound) {
             return; // The other fetch is still running — wait for it
         }
+
+        // Seamlessly merge local SQLite items so offline or newly added items always appear
+        DatabaseHelper db = com.campusfind.app.database.DatabaseHelper.getInstance(this);
+        try {
+            List<Item> localLost = db.getLostItems(null, null);
+            for (Item local : localLost) {
+                boolean exists = false;
+                for (Item item : allLostItems) {
+                    if (local.getItemId() == item.getItemId() ||
+                            (local.getItemName() != null && local.getItemName().equalsIgnoreCase(item.getItemName())
+                                    && local.getDate() != null && local.getDate().equalsIgnoreCase(item.getDate()))) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    allLostItems.add(local);
+                }
+            }
+
+            List<Item> localFound = db.getFoundItems(null, null);
+            for (Item local : localFound) {
+                boolean exists = false;
+                for (Item item : allFoundItems) {
+                    if (local.getItemId() == item.getItemId() ||
+                            (local.getItemName() != null && local.getItemName().equalsIgnoreCase(item.getItemName())
+                                    && local.getDate() != null && local.getDate().equalsIgnoreCase(item.getDate()))) {
+                        exists = true;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    allFoundItems.add(local);
+                }
+            }
+        } catch (Exception ignored) {}
 
         initialLoadDone = true;
         applyFilters();

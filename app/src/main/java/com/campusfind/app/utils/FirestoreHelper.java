@@ -24,9 +24,10 @@ import java.util.Map;
  */
 public class FirestoreHelper {
 
-    private static final String TAG       = "FirestoreHelper";
-    private static final String COL_LOST  = "lost_items";
-    private static final String COL_FOUND = "found_items";
+    private static final String TAG        = "FirestoreHelper";
+    private static final String COL_LOST   = "lost_items";
+    private static final String COL_FOUND  = "found_items";
+    private static final String COL_CLAIMS = "claims";
 
     private static FirestoreHelper instance;
     private final FirebaseFirestore db;
@@ -40,6 +41,11 @@ public class FirestoreHelper {
 
     public interface SaveCallback {
         void onSuccess(String firestoreId);
+        void onError(String message);
+    }
+
+    public interface ClaimCallback {
+        void onSuccess(com.campusfind.app.models.Claim claim);
         void onError(String message);
     }
 
@@ -178,12 +184,100 @@ public class FirestoreHelper {
                         Log.e(TAG, "markReturnedByOwnerCode query failed: " + e.getMessage()));
     }
 
+    /**
+     * Save a claim to Firestore so it can be verified cross-device.
+     */
+    public void saveClaim(com.campusfind.app.models.Claim claim, SaveCallback callback) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("userId",      claim.getUserId());
+        map.put("itemId",      claim.getItemId());
+        map.put("itemType",    nvl(claim.getItemType()));
+        map.put("qrPayload",   nvl(claim.getQrPayload()));
+        map.put("claimStatus", claim.getClaimStatus() != null ? claim.getClaimStatus() : "Pending");
+        map.put("claimerName", nvl(claim.getClaimerName()));
+        map.put("claimerRollNo", nvl(claim.getClaimerRollNo()));
+        map.put("claimerEmail", nvl(claim.getClaimerEmail()));
+        map.put("itemName",    nvl(claim.getItemName()));
+        map.put("timestamp",   com.google.firebase.firestore.FieldValue.serverTimestamp());
+
+        db.collection(COL_CLAIMS)
+                .add(map)
+                .addOnSuccessListener(docRef -> {
+                    Log.d(TAG, "Claim saved to cloud: " + docRef.getId());
+                    if (callback != null) callback.onSuccess(docRef.getId());
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "saveClaim failed: " + e.getMessage());
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Query a claim by QR payload from Firestore (cross-device scanning).
+     */
+    public void getClaimByQrPayload(String qrPayload, ClaimCallback callback) {
+        db.collection(COL_CLAIMS)
+                .whereEqualTo("qrPayload", qrPayload.trim())
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    if (snapshots.isEmpty()) {
+                        if (callback != null) callback.onSuccess(null);
+                        return;
+                    }
+                    QueryDocumentSnapshot doc = (QueryDocumentSnapshot) snapshots.getDocuments().get(0);
+                    com.campusfind.app.models.Claim claim = new com.campusfind.app.models.Claim();
+                    Long uid = doc.getLong("userId");
+                    claim.setUserId(uid != null ? uid.intValue() : 0);
+                    Long iid = doc.getLong("itemId");
+                    claim.setItemId(iid != null ? iid.intValue() : 0);
+                    claim.setItemType(doc.getString("itemType"));
+                    claim.setQrPayload(doc.getString("qrPayload"));
+                    claim.setClaimStatus(doc.getString("claimStatus"));
+                    claim.setClaimerName(doc.getString("claimerName"));
+                    claim.setClaimerRollNo(doc.getString("claimerRollNo"));
+                    claim.setClaimerEmail(doc.getString("claimerEmail"));
+                    claim.setItemName(doc.getString("itemName"));
+                    if (callback != null) callback.onSuccess(claim);
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "getClaimByQrPayload failed: " + e.getMessage());
+                    if (callback != null) callback.onError(e.getMessage());
+                });
+    }
+
+    /**
+     * Mark a claim as Returned in Firestore by its QR payload.
+     */
+    public void markClaimReturned(String qrPayload) {
+        db.collection(COL_CLAIMS)
+                .whereEqualTo("qrPayload", qrPayload.trim())
+                .get()
+                .addOnSuccessListener(snapshots -> {
+                    for (QueryDocumentSnapshot doc : snapshots) {
+                        doc.getReference().update("claimStatus", "Returned");
+                    }
+                })
+                .addOnFailureListener(e -> Log.e(TAG, "markClaimReturned failed: " + e.getMessage()));
+    }
+
+    /**
+     * Updates an item's status in Firestore (Lost or Found collection).
+     */
+    public void updateItemStatus(String itemType, String firestoreId, String newStatus) {
+        if (firestoreId == null || firestoreId.isEmpty()) return;
+        String col = "Lost".equalsIgnoreCase(itemType) ? COL_LOST : COL_FOUND;
+        db.collection(col).document(firestoreId)
+                .update("status", newStatus)
+                .addOnFailureListener(e -> Log.e(TAG, "updateItemStatus failed: " + e.getMessage()));
+    }
+
     // ─── Internal helpers ─────────────────────────────────────────────────────
 
     /** Convert an Item to a Firestore-compatible Map. */
     private Map<String, Object> buildMap(Item item) {
         Map<String, Object> map = new HashMap<>();
         map.put("userId",         item.getUserId());
+        map.put("itemId",         item.getItemId());
         map.put("itemName",       nvl(item.getItemName()));
         map.put("category",       nvl(item.getCategory()));
         map.put("description",    nvl(item.getDescription()));
@@ -207,7 +301,16 @@ public class FirestoreHelper {
         item.setItemType(type);
 
         Long userId = doc.getLong("userId");
-        item.setUserId(userId != null ? userId.intValue() : 0);
+        item.setUserId(userId != null ? userId.intValue() : 1);
+
+        Long itemId = doc.getLong("itemId");
+        if (itemId != null && itemId > 0) {
+            item.setItemId(itemId.intValue());
+        } else {
+            // Generate a stable positive integer ID based on document hash
+            int generatedId = Math.abs(doc.getId().hashCode() % 100000) + 1;
+            item.setItemId(generatedId);
+        }
 
         item.setItemName(doc.getString("itemName"));
         item.setCategory(doc.getString("category"));
