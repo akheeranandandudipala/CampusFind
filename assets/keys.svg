@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="metalGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f8fafc" />
+      <stop offset="50%" stop-color="#cbd5e1" />
+      <stop offset="100%" stop-color="#94a3b8" />
+    </linearGradient>
+    <linearGradient id="brassGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef08a" />
+      <stop offset="50%" stop-color="#eab308" />
+      <stop offset="100%" stop-color="#a16207" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="280" fill="url(#bgGrad)" rx="12" />
+  <!-- Keyring -->
+  <circle cx="160" cy="110" r="42" fill="none" stroke="url(#metalGrad)" stroke-width="9" />
+  <!-- Rubber Keychain Tag -->
+  <rect x="70" y="80" width="55" height="90" rx="10" fill="#dc2626" stroke="#991b1b" stroke-width="3" transform="rotate(-15 97 125)" />
+  <circle cx="95" cy="98" r="5" fill="#f8fafc" />
+  <text x="95" y="145" fill="#ffffff" font-family="sans-serif" font-size="10" font-weight="900" text-anchor="middle" transform="rotate(-15 97 125)">PULSAR</text>
+  <!-- Key 1 (Silver) -->
+  <g transform="translate(160, 110) rotate(35)">
+    <!-- Bow / Head -->
+    <circle cx="0" cy="0" r="28" fill="url(#metalGrad)" stroke="#64748b" stroke-width="2" />
+    <circle cx="0" cy="0" r="10" fill="#0f172a" />
+    <!-- Blade / Shaft -->
+    <rect x="-6" y="24" width="12" height="90" fill="url(#metalGrad)" stroke="#64748b" stroke-width="1.5" />
+    <!-- Bitting / Teeth -->
+    <path d="M6 75 L16 80 L6 88 L14 96 L6 102 L15 110 L-6 114 Z" fill="url(#metalGrad)" />
+  </g>
+  <!-- Key 2 (Brass) -->
+  <g transform="translate(160, 110) rotate(75)">
+    <circle cx="0" cy="0" r="25" fill="url(#brassGrad)" stroke="#854d0e" stroke-width="2" />
+    <circle cx="0" cy="0" r="8" fill="#0f172a" />
+    <rect x="-5" y="22" width="10" height="80" fill="url(#brassGrad)" stroke="#854d0e" stroke-width="1.5" />
+    <path d="M5 65 L14 70 L5 78 L12 85 L5 92 L-5 98 Z" fill="url(#brassGrad)" />
+  </g>
+  <!-- Badge -->
+  <rect x="290" y="16" width="95" height="22" rx="11" fill="rgba(239,68,68,0.15)" stroke="#ef4444" stroke-width="1" />
+  <text x="337" y="31" fill="#f87171" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">KEYS & TAGS</text>
+</svg>
