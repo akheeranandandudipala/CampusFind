@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 280" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#1e293b" />
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a8a" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+  </defs>
+  <rect width="400" height="280" fill="url(#bgGrad)" rx="12" />
+  <!-- Lanyard String -->
+  <path d="M200 0 C160 30 180 70 195 90" stroke="#38bdf8" stroke-width="8" fill="none" opacity="0.8" />
+  <path d="M200 0 C240 30 220 70 205 90" stroke="#0284c7" stroke-width="8" fill="none" opacity="0.8" />
+  <!-- Metal Clip -->
+  <rect x="190" y="86" width="20" height="18" rx="3" fill="#cbd5e1" stroke="#94a3b8" stroke-width="1.5" />
+  <circle cx="200" cy="95" r="4" fill="#64748b" />
+  <!-- ID Card Body -->
+  <rect x="120" y="100" width="160" height="150" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2" filter="drop-shadow(0 10px 15px rgba(0,0,0,0.5))" />
+  <!-- Card Header Strip -->
+  <path d="M120 100 h160 v35 h-160 Z" fill="url(#cardGrad)" rx="10 10 0 0" />
+  <text x="200" y="122" fill="#ffffff" font-family="sans-serif" font-size="11" font-weight="900" text-anchor="middle" letter-spacing="1">SR UNIVERSITY</text>
+  <!-- Photo Box -->
+  <rect x="135" y="145" width="45" height="52" rx="4" fill="#e2e8f0" stroke="#cbd5e1" />
+  <circle cx="157" cy="162" r="12" fill="#94a3b8" />
+  <path d="M142 192 C142 178 172 178 172 192 Z" fill="#94a3b8" />
+  <!-- Text Lines -->
+  <rect x="190" y="150" width="75" height="8" rx="2" fill="#1e293b" />
+  <rect x="190" y="164" width="55" height="6" rx="2" fill="#64748b" />
+  <rect x="190" y="176" width="65" height="6" rx="2" fill="#64748b" />
+  <!-- Barcode / Hologram -->
+  <rect x="135" y="210" width="130" height="25" rx="3" fill="#0f172a" />
+  <line x1="145" y1="215" x2="145" y2="230" stroke="#ffffff" stroke-width="2" />
+  <line x1="150" y1="215" x2="150" y2="230" stroke="#ffffff" stroke-width="1" />
+  <line x1="156" y1="215" x2="156" y2="230" stroke="#ffffff" stroke-width="3" />
+  <line x1="165" y1="215" x2="165" y2="230" stroke="#ffffff" stroke-width="2" />
+  <line x1="172" y1="215" x2="172" y2="230" stroke="#ffffff" stroke-width="1.5" />
+  <line x1="180" y1="215" x2="180" y2="230" stroke="#ffffff" stroke-width="2.5" />
+  <line x1="190" y1="215" x2="190" y2="230" stroke="#ffffff" stroke-width="1" />
+  <line x1="198" y1="215" x2="198" y2="230" stroke="#ffffff" stroke-width="2" />
+  <line x1="205" y1="215" x2="205" y2="230" stroke="#ffffff" stroke-width="3" />
+  <line x1="218" y1="215" x2="218" y2="230" stroke="#ffffff" stroke-width="1.5" />
+  <line x1="230" y1="215" x2="230" y2="230" stroke="#ffffff" stroke-width="2" />
+  <line x1="242" y1="215" x2="242" y2="230" stroke="#ffffff" stroke-width="2" />
+  <line x1="252" y1="215" x2="252" y2="230" stroke="#ffffff" stroke-width="1.5" />
+  <!-- Badge -->
+  <rect x="290" y="16" width="95" height="22" rx="11" fill="rgba(16,185,129,0.15)" stroke="#10b981" stroke-width="1" />
+  <text x="337" y="31" fill="#34d399" font-family="sans-serif" font-size="11" font-weight="bold" text-anchor="middle">CAMPUS ID</text>
+</svg>

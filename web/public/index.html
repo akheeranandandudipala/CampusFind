@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusFind — SR University Smart Lost & Found Network</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ── Navigation Bar ──────────────────────────────────────── -->
+  <header class="navbar">
+    <div class="container nav-inner">
+      <div class="brand" onclick="App.switchView('catalog')">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon>
+          </svg>
+        </div>
+        <div class="brand-title">
+          <span>CampusFind</span>
+          <span class="brand-badge">SRU Live</span>
+        </div>
+      </div>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a class="nav-link active" data-view="catalog" onclick="App.switchView('catalog')">Browse Catalog</a></li>
+          <li><a class="nav-link" data-view="report-lost" onclick="App.switchView('report-lost')">Report Lost</a></li>
+          <li><a class="nav-link" data-view="report-found" onclick="App.switchView('report-found')">Report Found</a></li>
+          <li><a class="nav-link" data-view="verify-qr" onclick="App.switchView('verify-qr')">Verify QR</a></li>
+          <li><a class="nav-link" data-view="analytics" onclick="App.switchView('analytics')">Campus Map & Stats</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-actions">
+        <div class="user-pill" onclick="App.openUserSwitcher()" title="Click to switch current student profile">
+          <div class="user-avatar" id="navUserAvatar">MR</div>
+          <div class="user-info">
+            <span class="user-name" id="navUserName">Muktheswar Reddy</span>
+            <span class="user-role" id="navUserRoll">2403A54023</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Hero Section ────────────────────────────────────────── -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-pill">
+        <span class="pulse"></span>
+        <span>SR UNIVERSITY CAMPUS NETWORK • LIVE RECOVERY SYSTEM</span>
+      </div>
+      <h1 class="hero-title">
+        Never Lose Anything on <span>Campus</span> Again.
+      </h1>
+      <p class="hero-desc">
+        Automated keyword matching, immediate owner verification QR codes, and tamper-proof handover tracking across all campus zones.
+      </p>
+
+      <div class="hero-actions">
+        <button class="btn btn-lost" onclick="App.switchView('report-lost')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          Report Lost Item
+        </button>
+        <button class="btn btn-found" onclick="App.switchView('report-found')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+          Report Found Item
+        </button>
+        <button class="btn btn-secondary" onclick="App.switchView('verify-qr')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"></rect>
+            <rect x="14" y="3" width="7" height="7"></rect>
+            <rect x="14" y="14" width="7" height="7"></rect>
+            <rect x="3" y="14" width="7" height="7"></rect>
+          </svg>
+          Handover QR Scanner
+        </button>
+      </div>
+
+      <!-- Live Metrics Counters -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon" style="background: rgba(14,165,233,0.15); color: #38bdf8;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="metric-value" id="statTotalItems">48</div>
+            <div class="metric-label">Items Reported</div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon" style="background: rgba(16,185,129,0.15); color: #10b981;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="8.5" cy="7" r="4"></circle>
+              <polyline points="17 11 19 13 23 9"></polyline>
+            </svg>
+          </div>
+          <div>
+            <div class="metric-value" id="statReturnedItems">41</div>
+            <div class="metric-label">Items Reunited</div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon" style="background: rgba(245,158,11,0.15); color: #f59e0b;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 14 14"></polyline>
+            </svg>
+          </div>
+          <div>
+            <div class="metric-value" id="statRecoveryRate">85.4%</div>
+            <div class="metric-label">Recovery Success</div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon" style="background: rgba(129,140,248,0.15); color: #818cf8;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </div>
+          <div>
+            <div class="metric-value">&lt; 3h</div>
+            <div class="metric-label">Avg Recovery Time</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Main Views Container ──────────────────────────────────── -->
+  <main class="container">
+
+    <!-- VIEW 1: Browse Catalog -->
+    <section class="app-view active" id="view-catalog">
+      <div class="catalog-header">
+        <div class="search-row">
+          <div class="search-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" class="search-input" id="catalogSearchInput" placeholder="Search by item name, description, keyword, or roll number...">
+          </div>
+
+          <select class="select-filter" id="catalogLocationFilter">
+            <option value="ALL">All Campus Zones</option>
+            <option value="Central Library">Central Library</option>
+            <option value="Main Canteen">Main Canteen</option>
+            <option value="Tech Park">Tech Park</option>
+            <option value="Block-A">Block-A</option>
+            <option value="Sports Complex">Sports Complex</option>
+            <option value="East Parking Lot">East Parking Lot</option>
+          </select>
+
+          <select class="select-filter" id="catalogStatusFilter">
+            <option value="ALL">All Statuses</option>
+            <option value="LOST">Lost Items Only</option>
+            <option value="FOUND">Found Items Only</option>
+            <option value="RETURNED">Returned / Reunited</option>
+          </select>
+        </div>
+
+        <!-- Category Pills -->
+        <div class="pill-filters">
+          <button class="pill-btn active" data-category="ALL" onclick="App.setCategoryFilter('ALL')">All Categories</button>
+          <button class="pill-btn" data-category="Electronics" onclick="App.setCategoryFilter('Electronics')">Electronics</button>
+          <button class="pill-btn" data-category="ID Cards" onclick="App.setCategoryFilter('ID Cards')">ID Cards</button>
+          <button class="pill-btn" data-category="Wallets" onclick="App.setCategoryFilter('Wallets')">Wallets</button>
+          <button class="pill-btn" data-category="Keys" onclick="App.setCategoryFilter('Keys')">Keys</button>
+          <button class="pill-btn" data-category="Bottles" onclick="App.setCategoryFilter('Bottles')">Bottles</button>
+          <button class="pill-btn" data-category="Others" onclick="App.setCategoryFilter('Others')">Others</button>
+        </div>
+      </div>
+
+      <!-- Item Cards Grid -->
+      <div class="item-grid" id="catalogItemsGrid">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </section>
+
+    <!-- VIEW 2: Report Lost Item -->
+    <section class="app-view" id="view-report-lost">
+      <div class="form-card">
+        <div class="form-header">
+          <h2>Report a Lost Item</h2>
+          <p>Submit your lost item details. Our engine will immediately generate an Owner QR Badge and continuously match incoming found reports.</p>
+        </div>
+
+        <form id="formReportLost" onsubmit="App.handleLostSubmit(event)">
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label class="form-label">Item Title / Name *</label>
+              <input type="text" class="form-input" id="lostTitle" placeholder="e.g. Matte Black HP Pavilion 15-inch Laptop" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Category *</label>
+              <select class="form-select" id="lostCategory" required>
+                <option value="Electronics">Electronics</option>
+                <option value="ID Cards">ID Cards</option>
+                <option value="Wallets">Wallets & Money</option>
+                <option value="Keys">Keys</option>
+                <option value="Bottles">Bottles</option>
+                <option value="Backpacks">Backpacks & Books</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Campus Location Lost *</label>
+              <select class="form-select" id="lostLocation" required>
+                <option value="Central Library 2nd Floor">Central Library 2nd Floor</option>
+                <option value="Central Library Reading Hall">Central Library Reading Hall</option>
+                <option value="Main Canteen Food Court">Main Canteen Food Court</option>
+                <option value="Tech Park Lab 304">Tech Park Lab 304</option>
+                <option value="Block-A Room 210">Block-A Room 210</option>
+                <option value="Sports Complex Badminton Court">Sports Complex Badminton Court</option>
+                <option value="East Parking Lot Gate 2">East Parking Lot Gate 2</option>
+                <option value="Other Campus Zone">Other Campus Zone</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Date Lost *</label>
+              <input type="date" class="form-input" id="lostDate" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Approximate Time *</label>
+              <input type="time" class="form-input" id="lostTime" required>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label">Description & Distinctive Marks *</label>
+              <textarea class="form-textarea" id="lostDesc" placeholder="Include serial numbers, stickers, color, unique scratches, or contents inside..." required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Owner Name</label>
+              <input type="text" class="form-input" id="lostOwnerName" readonly>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Owner Roll Number</label>
+              <input type="text" class="form-input" id="lostOwnerRoll" readonly>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Owner University Email</label>
+              <input type="email" class="form-input" id="lostOwnerEmail" readonly>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Owner Contact Number</label>
+              <input type="tel" class="form-input" id="lostOwnerPhone" value="+91 98765 43210" required>
+            </div>
+
+            <div class="form-group full-width" style="margin-top: 14px;">
+              <button type="submit" class="btn btn-lost" style="width: 100%; padding: 14px; font-size: 1rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                Register Lost Item & Generate Owner QR Badge
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 3: Report Found Item -->
+    <section class="app-view" id="view-report-found">
+      <div class="form-card">
+        <div class="form-header">
+          <h2>Report a Found Item</h2>
+          <p>Help a fellow student! Upload a picture and details. Our Matching Engine will immediately scan for active lost reports.</p>
+        </div>
+
+        <form id="formReportFound" onsubmit="App.handleFoundSubmit(event)">
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label class="form-label">Item Title / Name *</label>
+              <input type="text" class="form-input" id="foundTitle" placeholder="e.g. Black HP Laptop Charger with wireless mouse" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Category *</label>
+              <select class="form-select" id="foundCategory" required>
+                <option value="Electronics">Electronics</option>
+                <option value="ID Cards">ID Cards</option>
+                <option value="Wallets">Wallets & Money</option>
+                <option value="Keys">Keys</option>
+                <option value="Bottles">Bottles</option>
+                <option value="Backpacks">Backpacks & Books</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Campus Location Found *</label>
+              <select class="form-select" id="foundLocation" required>
+                <option value="Central Library Reading Hall">Central Library Reading Hall</option>
+                <option value="Central Library 2nd Floor">Central Library 2nd Floor</option>
+                <option value="Main Canteen Cash Counter">Main Canteen Cash Counter</option>
+                <option value="Tech Park Lab 304">Tech Park Lab 304</option>
+                <option value="Block-A Room 210">Block-A Room 210</option>
+                <option value="Sports Complex Badminton Court">Sports Complex Badminton Court</option>
+                <option value="East Parking Lot Gate 2">East Parking Lot Gate 2</option>
+                <option value="Other Campus Zone">Other Campus Zone</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Date Found *</label>
+              <input type="date" class="form-input" id="foundDate" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Time Found *</label>
+              <input type="time" class="form-input" id="foundTime" required>
+            </div>
+
+            <!-- Photo Upload Area -->
+            <div class="form-group full-width">
+              <label class="form-label">Item Photo (Base64 Auto-Compression) *</label>
+              <div class="dropzone" id="foundDropzone" onclick="document.getElementById('foundFileInput').click()">
+                <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+                  <circle cx="12" cy="13" r="4"></circle>
+                </svg>
+                <div class="dropzone-text">Click to browse or drag and drop item image</div>
+                <div class="dropzone-hint">Auto-compressed to lightweight persistent Base64 JPEG</div>
+                <input type="file" id="foundFileInput" accept="image/*" style="display: none;" onchange="App.handleImageUpload(event)">
+              </div>
+              <div class="image-preview-box" id="foundImgPreviewBox">
+                <img id="foundImgPreview" src="" alt="Found Item Preview">
+                <button type="button" class="btn-remove-img" onclick="App.removeFoundImage()">&times;</button>
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label class="form-label">Detailed Description *</label>
+              <textarea class="form-textarea" id="foundDesc" placeholder="Where exactly was it found? In whose possession is it currently stored (e.g. Library Desk, Security Office)?" required></textarea>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Finder Name</label>
+              <input type="text" class="form-input" id="foundFinderName" readonly>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Finder Roll / ID</label>
+              <input type="text" class="form-input" id="foundFinderRoll" readonly>
+            </div>
+
+            <div class="form-group full-width" style="margin-top: 14px;">
+              <button type="submit" class="btn btn-found" style="width: 100%; padding: 14px; font-size: 1rem;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+                Publish Found Item & Run Real-Time Keyword Matching
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- VIEW 4: QR Scanner & Verification Station -->
+    <section class="app-view" id="view-verify-qr">
+      <div class="scanner-station">
+        <div class="scanner-box">
+          <h2 style="font-size: 1.8rem; font-weight: 800; margin-bottom: 6px;">Handover Verification Station</h2>
+          <p style="color: var(--text-secondary); margin-bottom: 24px;">
+            Scan the student's Owner Verification QR Code (<code>CF-XXXXXX</code>) or Claim QR Code (<code>CAMPUSFIND_CLAIM_...</code>) to authenticate identity before releasing items.
+          </p>
+
+          <!-- Camera Stream -->
+          <div class="scanner-video-wrap">
+            <div id="reader"></div>
+            <div class="scanner-laser" id="scannerLaser"></div>
+          </div>
+
+          <div style="display: flex; justify-content: center; gap: 12px; margin-bottom: 24px;">
+            <button class="btn btn-secondary btn-sm" id="btnStartCamera" onclick="App.startCameraScanner()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+              Start Web Camera
+            </button>
+            <button class="btn btn-outline btn-sm" id="btnStopCamera" onclick="App.stopCameraScanner()" style="display:none;">
+              Stop Camera
+            </button>
+          </div>
+
+          <!-- Manual Code Input -->
+          <div style="margin: 16px 0 10px 0; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; font-weight: 700;">
+            — Or Enter Verification Code Manually —
+          </div>
+          <div class="manual-verify-box">
+            <input type="text" class="form-input" id="manualCodeInput" placeholder="Enter CF-XXXXXX or claim payload" style="font-family: var(--font-mono); text-transform: uppercase;">
+            <button class="btn btn-primary" onclick="App.handleManualVerify()">Verify Code</button>
+          </div>
+        </div>
+
+        <!-- Verification Success Card -->
+        <div class="verify-result-card" id="verifyResultCard">
+          <div style="display: flex; align-items: center; gap: 14px; margin-bottom: 18px;">
+            <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--found-color); color: #0f172a; display: flex; align-items: center; justify-content: center;">
+              <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </div>
+            <div>
+              <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--found-color);">Identity Verified & Authenticated</h3>
+              <p style="font-size: 0.85rem; color: var(--text-secondary);" id="verifyResultSubtitle">Matches valid record in campus registry</p>
+            </div>
+          </div>
+
+          <div style="background: var(--bg-elevated); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 20px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 0.9rem;">
+              <div><strong>Item Name:</strong> <span id="vItemName">-</span></div>
+              <div><strong>Category:</strong> <span id="vItemCategory">-</span></div>
+              <div><strong>Owner Name:</strong> <span id="vOwnerName">-</span></div>
+              <div><strong>Roll Number:</strong> <span id="vOwnerRoll">-</span></div>
+              <div><strong>Verification Code:</strong> <code id="vCode" style="color: var(--primary-light); font-weight: bold;">-</code></div>
+              <div><strong>Reported Location:</strong> <span id="vLocation">-</span></div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button class="btn btn-outline" onclick="App.dismissVerifyResult()">Dismiss</button>
+            <button class="btn btn-found" id="btnConfirmHandover" onclick="App.confirmHandover()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Confirm Physical Handover & Mark Returned
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 5: Campus Map & Analytics -->
+    <section class="app-view" id="view-analytics">
+      <div class="analytics-grid">
+        <!-- Interactive Campus Zone Map -->
+        <div class="dashboard-card">
+          <h3>
+            <span>SR University Interactive Campus Zone Map</span>
+            <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">CLICK ZONE TO FILTER</span>
+          </h3>
+
+          <svg class="campus-map-svg" viewBox="0 0 800 400" id="campusFloorplan">
+            <!-- Background Ground -->
+            <rect width="800" height="400" fill="#090d16" />
+            <!-- Paths / Walkways -->
+            <path d="M 50 200 L 750 200 M 400 30 L 400 370" stroke="#1e293b" stroke-width="28" stroke-linecap="round" />
+            <path d="M 50 200 L 750 200 M 400 30 L 400 370" stroke="#334155" stroke-width="2" stroke-dasharray="8,6" />
+
+            <!-- Zone: Central Library -->
+            <g class="map-zone" onclick="App.filterByMapZone('Central Library')" transform="translate(60, 50)">
+              <rect width="180" height="110" rx="10" fill="#0284c7" fill-opacity="0.25" stroke="#38bdf8" stroke-width="2" />
+              <text x="90" y="45" fill="#f8fafc" font-size="14" font-weight="bold" text-anchor="middle">Central Library</text>
+              <text x="90" y="65" fill="#94a3b8" font-size="11" text-anchor="middle">2nd Flr & Reading Hall</text>
+              <rect x="55" y="78" width="70" height="20" rx="10" fill="#0284c7" />
+              <text x="90" y="92" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle" id="mapCountLibrary">14 Items</text>
+            </g>
+
+            <!-- Zone: Tech Park -->
+            <g class="map-zone" onclick="App.filterByMapZone('Tech Park')" transform="translate(540, 50)">
+              <rect width="190" height="110" rx="10" fill="#818cf8" fill-opacity="0.25" stroke="#818cf8" stroke-width="2" />
+              <text x="95" y="45" fill="#f8fafc" font-size="14" font-weight="bold" text-anchor="middle">Tech Park</text>
+              <text x="95" y="65" fill="#94a3b8" font-size="11" text-anchor="middle">CSE / AI Labs 304</text>
+              <rect x="60" y="78" width="70" height="20" rx="10" fill="#6366f1" />
+              <text x="95" y="92" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle" id="mapCountTechPark">9 Items</text>
+            </g>
+
+            <!-- Zone: Main Canteen Food Court -->
+            <g class="map-zone" onclick="App.filterByMapZone('Main Canteen')" transform="translate(60, 240)">
+              <rect width="180" height="110" rx="10" fill="#f59e0b" fill-opacity="0.25" stroke="#f59e0b" stroke-width="2" />
+              <text x="90" y="45" fill="#f8fafc" font-size="14" font-weight="bold" text-anchor="middle">Main Canteen</text>
+              <text x="90" y="65" fill="#94a3b8" font-size="11" text-anchor="middle">Food Court & Cash Desk</text>
+              <rect x="55" y="78" width="70" height="20" rx="10" fill="#d97706" />
+              <text x="90" y="92" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle" id="mapCountCanteen">12 Items</text>
+            </g>
+
+            <!-- Zone: Sports Complex -->
+            <g class="map-zone" onclick="App.filterByMapZone('Sports Complex')" transform="translate(540, 240)">
+              <rect width="190" height="110" rx="10" fill="#10b981" fill-opacity="0.25" stroke="#10b981" stroke-width="2" />
+              <text x="95" y="45" fill="#f8fafc" font-size="14" font-weight="bold" text-anchor="middle">Sports Complex</text>
+              <text x="95" y="65" fill="#94a3b8" font-size="11" text-anchor="middle">Badminton & Arena</text>
+              <rect x="60" y="78" width="70" height="20" rx="10" fill="#059669" />
+              <text x="95" y="92" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle" id="mapCountSports">6 Items</text>
+            </g>
+
+            <!-- Zone: Central Plaza & Block A -->
+            <g class="map-zone" onclick="App.filterByMapZone('Block-A')" transform="translate(310, 140)">
+              <rect width="180" height="120" rx="12" fill="#ec4899" fill-opacity="0.25" stroke="#ec4899" stroke-width="2" />
+              <text x="90" y="50" fill="#f8fafc" font-size="15" font-weight="900" text-anchor="middle">Block-A Admin</text>
+              <text x="90" y="70" fill="#94a3b8" font-size="11" text-anchor="middle">Room 210 & Security</text>
+              <rect x="55" y="85" width="70" height="20" rx="10" fill="#db2777" />
+              <text x="90" y="99" fill="#fff" font-size="10" font-weight="bold" text-anchor="middle" id="mapCountBlockA">7 Items</text>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Campus Zone Hotspots Leaderboard -->
+        <div class="dashboard-card">
+          <h3>Zone Activity Ranking</h3>
+          <div class="hotspot-list" id="hotspotsContainer">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Handovers Audit Table -->
+      <div class="dashboard-card">
+        <h3>Recent Verified Campus Handovers</h3>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; border-collapse: collapse; font-size: 0.9rem;" id="auditTable">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted); text-align: left;">
+                <th style="padding: 12px 16px;">Item</th>
+                <th style="padding: 12px 16px;">Category</th>
+                <th style="padding: 12px 16px;">Claimant / Owner</th>
+                <th style="padding: 12px 16px;">Handover Zone</th>
+                <th style="padding: 12px 16px;">Auth Code</th>
+                <th style="padding: 12px 16px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="auditTableBody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ── MODAL 1: Item Details & Claim ─────────────────────────── -->
+  <div class="modal-overlay" id="modalItemDetail">
+    <div class="modal-content">
+      <button class="modal-close" onclick="App.closeModals()">&times;</button>
+      <div id="modalDetailContent">
+        <!-- Rendered by app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL 2: Owner Verification QR Badge ──────────────────── -->
+  <div class="modal-overlay" id="modalOwnerBadge">
+    <div class="modal-content" style="text-align: center;">
+      <button class="modal-close" onclick="App.closeModals()">&times;</button>
+      <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 6px;">Owner Verification QR Badge</h3>
+      <p style="color: var(--text-secondary); font-size: 0.9rem;">Present this QR code or code string to campus security or finders to verify item ownership.</p>
+
+      <div class="qr-badge-preview" id="qrBadgePrintArea">
+        <div style="font-size: 0.75rem; font-weight: 800; color: #64748b; letter-spacing: 1px; text-transform: uppercase;">SR UNIVERSITY • CAMPUSFIND</div>
+        <h4 id="badgeItemTitle" style="font-size: 1.2rem; font-weight: 800; margin: 6px 0 16px 0;">Item Title</h4>
+        <div id="badgeQrContainer" style="display: flex; justify-content: center; margin: 12px 0;"></div>
+        <div class="qr-badge-code" id="badgeOwnerCode">CF-XXXXXX</div>
+        <div style="font-size: 0.85rem; color: #475569; margin-top: 8px;">
+          Owner: <strong id="badgeOwnerName">-</strong> (<span id="badgeOwnerRoll">-</span>)
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: center;">
+        <button class="btn btn-outline" onclick="App.closeModals()">Close</button>
+        <button class="btn btn-primary" onclick="window.print()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+          Print / Save Badge
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL 3: Real-Time Keyword Match Alert ─────────────────── -->
+  <div class="modal-overlay" id="modalMatchAlert">
+    <div class="modal-content">
+      <button class="modal-close" onclick="App.closeModals()">&times;</button>
+      <div class="match-banner">
+        <div class="match-banner-icon">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        </div>
+        <div>
+          <h3 style="font-size: 1.25rem; font-weight: 800; color: #f8fafc; margin-bottom: 4px;">Potential Owner Match Found!</h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary);">
+            CampusFind's Matching Engine detected a high-probability match between your newly submitted found item and an active lost report!
+          </p>
+        </div>
+      </div>
+
+      <div id="matchAlertDetails" style="background: var(--bg-elevated); border-radius: var(--radius-sm); padding: 18px; margin-bottom: 20px;">
+        <!-- Filled dynamically -->
+      </div>
+
+      <div style="display: flex; gap: 12px; justify-content: flex-end;">
+        <button class="btn btn-outline" onclick="App.closeModals()">Review Catalog</button>
+        <a class="btn btn-found" id="btnMatchSendEmail" href="#" target="_blank">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+          Send Pre-Filled Email to Owner
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL 4: User Profile Switcher ────────────────────────── -->
+  <div class="modal-overlay" id="modalUserSwitcher">
+    <div class="modal-content">
+      <button class="modal-close" onclick="App.closeModals()">&times;</button>
+      <h3 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 6px;">Switch Active Student Profile</h3>
+      <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 20px;">
+        Test and simulate item submissions and handovers from different student or security perspectives:
+      </p>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="hotspot-item" style="cursor: pointer;" onclick="App.selectUser('muktheswar')">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="user-avatar">MR</div>
+            <div>
+              <div style="font-weight: 700;">Gangula Muktheswar Reddy</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Roll: 2403A54023 • CSE Student</div>
+            </div>
+          </div>
+          <span class="btn btn-outline btn-sm">Select</span>
+        </div>
+
+        <div class="hotspot-item" style="cursor: pointer;" onclick="App.selectUser('akheeranandan')">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="user-avatar" style="background: linear-gradient(135deg, #10b981, #059669);">AN</div>
+            <div>
+              <div style="font-weight: 700;">Akheeranandan</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Roll: 2403A53001 • CSE Student</div>
+            </div>
+          </div>
+          <span class="btn btn-outline btn-sm">Select</span>
+        </div>
+
+        <div class="hotspot-item" style="cursor: pointer;" onclick="App.selectUser('security')">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <div class="user-avatar" style="background: linear-gradient(135deg, #f59e0b, #d97706);">SC</div>
+            <div>
+              <div style="font-weight: 700;">Campus Security Desk</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">Badge: SEC-DESK-01 • Admin / Security</div>
+            </div>
+          </div>
+          <span class="btn btn-outline btn-sm">Select</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Footer ────────────────────────────────────────────────── -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>
+        <strong>CampusFind</strong> — Smart University Lost & Found System • SR University
+      </div>
+      <div>
+        Project by <strong>Gangula Muktheswar Reddy (2403A54023)</strong> & <strong>Akheeranandan (2403A53001)</strong>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ── Scripts ───────────────────────────────────────────────── -->
+  <script src="js/qrcode.min.js"></script>
+  <script src="js/html5-qrcode.min.js"></script>
+  <script src="js/matching.js"></script>
+  <script src="js/qr-helper.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
